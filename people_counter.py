@@ -1,6 +1,6 @@
 # USAGE
 # To read and write back out to video:
-# python people_counter.py  -g mobilenetgraph --input videos/example_01.mp4
+# python people_counter.py -g mobilenetgraph --input videos/example_01.mp4
 #
 # To read from webcam and write back out to disk:
 # python people_counter.py -g mobilenetgraph
@@ -57,7 +57,8 @@ def preprocess_image(input_image):
 
 def preprocess_image_rgb(input_image):
 	# preprocess the image of RGB
-	rgb = cv2.resize(input_image, PREPROCESS_DIMS)
+	# rgb = cv2.resize(input_image, PREPROCESS_DIMS)
+	rgb = imutils.resize(input_image, width = 300)
 
 	# return the image 
 	return rgb
@@ -85,7 +86,7 @@ with open(args["graph"], mode="rb") as f:
 if not args.get("input", False):
 	print("[INFO] starting video stream...")
 	vs = VideoStream(src = 0).start()
-	time.sleep(1.0)
+	time.sleep(2.0)
 
 # otherwise, grab a reference to the video file
 else:
@@ -168,10 +169,15 @@ while True:
 		graph.queue_inference_with_fifo_elem(input_fifo, output_fifo, frame.astype(np.float32), frame)
 		print("[INFO] start inferencing...")
 		
-		#obtain the desult from Fifo.read_elem()
+		#obtain the result from Fifo.read_elem()
 		out,user_obj = output_fifo.read_elem()
-
 		num_valid_boxes = int(out[0])
+
+		input_fifo.destroy()
+		output_fifo.destroy()
+
+		graph.destroy()
+		print("[INFO] destroying the graph...")
 
 		# These 7 values describe the object found and they are:
 		# 0: image_id (always 0 for myriad)
@@ -193,7 +199,6 @@ while True:
 					not np.isfinite(out[base_index + 6])):
 					continue
 
-				# (h, w) = frame.shape[:2]
 				x1 = max(0, int(out[base_index + 3] * W))
 				y1 = max(0, int(out[base_index + 4] * H))
 				x2 = min(W, int(out[base_index + 5] * W))
@@ -235,13 +240,15 @@ while True:
 				# add the tracker to our list of trackers so we can
 				# utilize it during skip frames
 				trackers.append(tracker)
+				print("[INFO] num_valid_boxes: ",num_valid_boxes)
+				print("trackers: ", len(trackers))
 			
-		# clean up the graph and device
-		input_fifo.destroy()
-		output_fifo.destroy()
+		# clean up the graph
+		# input_fifo.destroy()
+		# output_fifo.destroy()
 
-		graph.destroy()
-		print("[INFO] destroying the graph...")
+		# graph.destroy()
+		# print("[INFO] destroying the graph...")
 
 	# otherwise, we should utilize our object *trackers* rather than
 	# object *detectors* to obtain a higher frame processing throughput
