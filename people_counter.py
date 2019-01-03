@@ -1,9 +1,16 @@
 # USAGE
-# To read and write back out to video:
-# python people_counter.py -g mobilenetgraph --input videos/example_01.mp4
-#
+# To read from video:
+# python people_counter.py \
+# --prototxt mobilenet_ssd/MobileNetSSD_deploy.prototxt \
+# --model mobilenet_ssd/MobileNetSSD_deploy.caffemodel \
+# --graph mobilenetgraph_frdc25403 \
+# --input videos/example_01.mp4
+# 
 # To read from webcam and write back out to disk:
-# python people_counter.py -g mobilenetgraph
+# python people_counter.py \
+# --prototxt mobilenet_ssd/MobileNetSSD_deploy.prototxt \
+# --model mobilenet_ssd/MobileNetSSD_deploy.caffemodel \
+# --graph mobilenetgraph_frdc25403
 
 # import the necessary packages
 from pyimagesearch.centroidtracker import CentroidTracker
@@ -64,7 +71,7 @@ def preprocess_image_rgb(input_image):
 	return rgb
 
 # grab a list of all NCS devices plugged in to USB
-print("[INFO] finding NCS devices...")
+print("[INFO] finding NCS device(s)...")
 devices = mvnc.enumerate_devices()
 
 # if no devices found, exit the script
@@ -73,8 +80,8 @@ if len(devices) == 0:
 	quit()
 
 # use the first device since this is a simple test script
-print("[INFO] found {} devices. device 0 will be used. "
-	"opening device 0...".format(len(devices)))
+print("[INFO] found {} devices. device 1 will be used. "
+	"opening device 1...".format(len(devices)))
 device = mvnc.Device(devices[0])
 device.open()
 
