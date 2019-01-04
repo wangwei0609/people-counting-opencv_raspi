@@ -53,22 +53,11 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 predictions = []
 PREPROCESS_DIMS = (300, 300)
 
+# preprocess the image
 def preprocess_image(input_image):
-	# preprocess the image
+
 	preprocessed = cv2.resize(input_image, PREPROCESS_DIMS)
-	preprocessed = preprocessed - 127.5
-	preprocessed = preprocessed * 0.007843
-
-	# return the image 
 	return preprocessed
-
-def preprocess_image_rgb(input_image):
-	# preprocess the image of RGB
-	# rgb = cv2.resize(input_image, PREPROCESS_DIMS)
-	rgb = imutils.resize(input_image, width = 300)
-
-	# return the image 
-	return rgb
 
 # grab a list of all NCS devices plugged in to USB
 print("[INFO] finding NCS device(s)...")
@@ -105,13 +94,13 @@ writer = None
 
 # initialize the frame dimensions (we'll set them as soon as we read
 # the first frame from the video)
-W = None
-H = None
+W = 300
+H = 300
 
 # instantiate our centroid tracker, then initialize a list to store
 # each of our dlib correlation trackers, followed by a dictionary to
 # map each unique object ID to a TrackableObject
-ct = CentroidTracker(maxDisappeared = 40, maxDistance = 50)
+ct = CentroidTracker(maxDisappeared = 40, maxDistance = 100)
 trackers = []
 trackableObjects = {}
 
@@ -136,11 +125,11 @@ while True:
 	if args["input"] is not None and frame is None:
 		break
 
-	# resize the frame to have a maximum width of 500 pixels (the
-	# less data we have, the faster we can process it), then convert
+	# resize the frame to have a maximum width of 300 pixels, then convert
 	# the frame from BGR to RGB for dlib
-	rgb = cv2.cvtColor(preprocess_image_rgb(frame), cv2.COLOR_BGR2RGB)
 	frame = preprocess_image(frame)
+	rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
 
 	# if the frame dimensions are empty, set them
 	if W is None or H is None:
@@ -164,7 +153,7 @@ while True:
 	if totalFrames % args["skip_frames"] == 0:
 		# set the status and initialize our new set of object trackers
 		status = "Detecting"
-		trackers = []
+		# trackers = []
 
 		# Create a Graph
 		graph = mvnc.Graph('MobileNet-SSD')
@@ -173,6 +162,8 @@ while True:
 		print("[INFO] loaded the graph file...")
 
 		#start inference after write the tensor to FIFO
+		frame = frame - 127.5
+		frame = frame * 0.007843
 		graph.queue_inference_with_fifo_elem(input_fifo, output_fifo, frame.astype(np.float32), frame)
 		print("[INFO] start inferencing...")
 		
@@ -219,44 +210,34 @@ while True:
 				prediction = (pred_class, pred_conf, pred_boxpts)
 				predictions.append (prediction)
 		
-		for (i, pred) in enumerate(predictions):
-			(pred_class, pred_conf, pred_boxpts) = pred
+		# for (i, pred) in enumerate(predictions):
+		# 	(pred_class, pred_conf, pred_boxpts) = pred
 
-			# filter out weak detections by ensuring the `confidence`
-			# is greater than the minimum confidence
-			if pred_conf > args["confidence"] and CLASSES[pred_class] == "person":
-				# print prediction to terminal
-				print("[INFO] Prediction #{}: class={}, confidence={}%, "
-					"boxpoints={}".format(i, CLASSES[pred_class], pred_conf * 100,
-					pred_boxpts))
+				# filter out weak detections by ensuring the `confidence`
+				# is greater than the minimum confidence
+				if pred_conf > args["confidence"] and CLASSES[pred_class] == "person":
+					# print prediction to terminal
+					print("[INFO] Prediction #{}: class={}, confidence={}%, "
+						"boxpoints={}".format(i, CLASSES[pred_class], pred_conf * 100,
+						pred_boxpts))
 
-				# compute the (x, y)-coordinates of the bounding box
-				# for the object
-				# box = pred_boxpts * np.array([W, H, W, H])
-				# box = pred_boxpts * np.array([W, H, W, H])
-				(startX, startY, endX, endY) = pred_boxpts
-				# print(pred_boxpts)
+					# compute the (x, y)-coordinates of the bounding box
+					# for the object
+					(startX, startY, endX, endY) = pred_boxpts
+					
+					# construct a dlib rectangle object from the bounding
+					# box coordinates and then start the dlib correlation
+					# tracker
+					tracker = dlib.correlation_tracker()
+					rect = dlib.rectangle(startX, startY, endX, endY)
+					tracker.start_track(rgb, rect)
+
+					# add the tracker to our list of trackers so we can
+					# utilize it during skip frames
+					trackers.append(tracker)
+					print("[INFO] num_valid_boxes: ",num_valid_boxes)
+					print("trackers: ", len(trackers))
 				
-				# construct a dlib rectangle object from the bounding
-				# box coordinates and then start the dlib correlation
-				# tracker
-				tracker = dlib.correlation_tracker()
-				rect = dlib.rectangle(startX, startY, endX, endY)
-				tracker.start_track(rgb, rect)
-
-				# add the tracker to our list of trackers so we can
-				# utilize it during skip frames
-				trackers.append(tracker)
-				print("[INFO] num_valid_boxes: ",num_valid_boxes)
-				print("trackers: ", len(trackers))
-			
-		# clean up the graph
-		# input_fifo.destroy()
-		# output_fifo.destroy()
-
-		# graph.destroy()
-		# print("[INFO] destroying the graph...")
-
 	# otherwise, we should utilize our object *trackers* rather than
 	# object *detectors* to obtain a higher frame processing throughput
 	else:
