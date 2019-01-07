@@ -53,9 +53,8 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 predictions = []
 PREPROCESS_DIMS = (300, 300)
 
-# preprocess the image
 def preprocess_image(input_image):
-
+	# preprocess the image get ready for NCS
 	preprocessed = cv2.resize(input_image, PREPROCESS_DIMS)
 	return preprocessed
 
@@ -100,7 +99,7 @@ H = 300
 # instantiate our centroid tracker, then initialize a list to store
 # each of our dlib correlation trackers, followed by a dictionary to
 # map each unique object ID to a TrackableObject
-ct = CentroidTracker(maxDisappeared = 40, maxDistance = 100)
+ct = CentroidTracker(maxDisappeared = 40, maxDistance = 50)
 trackers = []
 trackableObjects = {}
 
@@ -130,10 +129,9 @@ while True:
 	frame = preprocess_image(frame)
 	rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-
 	# if the frame dimensions are empty, set them
-	if W is None or H is None:
-		(H, W) = frame.shape[:2]
+	# if W is None or H is None:
+	# 	(H, W) = frame.shape[:2]
 
 	# if we are supposed to be writing a video to disk, initialize
 	# the writer
@@ -205,11 +203,11 @@ while True:
 				pred_class = int(out[base_index + 1])
 				pred_conf = out[base_index + 2]
 				pred_boxpts = (x1, y1, x2, y2)
-				# print(CLASSES[pred_class], pred_conf, pred_boxpts)
 
 				prediction = (pred_class, pred_conf, pred_boxpts)
 				predictions.append (prediction)
 		
+				print(predictions)
 		# for (i, pred) in enumerate(predictions):
 		# 	(pred_class, pred_conf, pred_boxpts) = pred
 
@@ -217,8 +215,11 @@ while True:
 				# is greater than the minimum confidence
 				if pred_conf > args["confidence"] and CLASSES[pred_class] == "person":
 					# print prediction to terminal
-					print("[INFO] Prediction #{}: class={}, confidence={}%, "
-						"boxpoints={}".format(i, CLASSES[pred_class], pred_conf * 100,
+					# print("[INFO] Prediction #{}: class={}, confidence={}%, "
+					# 	"boxpoints={}".format(i, CLASSES[pred_class], pred_conf * 100,
+					# 	pred_boxpts))
+					print("[INFO]: class={}, confidence={}%, "
+						"boxpoints={}".format(CLASSES[pred_class], pred_conf * 100,
 						pred_boxpts))
 
 					# compute the (x, y)-coordinates of the bounding box
