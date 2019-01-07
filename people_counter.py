@@ -56,6 +56,8 @@ PREPROCESS_DIMS = (300, 300)
 def preprocess_image(input_image):
 	# preprocess the image get ready for NCS
 	preprocessed = cv2.resize(input_image, PREPROCESS_DIMS)
+	preprocessed = preprocessed - 127.5
+	preprocessed = preprocessed * 0.007843
 	return preprocessed
 
 # grab a list of all NCS devices plugged in to USB
@@ -126,9 +128,10 @@ while True:
 
 	# resize the frame to have a maximum width of 300 pixels, then convert
 	# the frame from BGR to RGB for dlib
-	frame = preprocess_image(frame)
+	# frame = preprocess_image(frame)
 	rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
+	frame = preprocess_image(frame)
+	
 	# if the frame dimensions are empty, set them
 	# if W is None or H is None:
 	# 	(H, W) = frame.shape[:2]
@@ -160,8 +163,8 @@ while True:
 		print("[INFO] loaded the graph file...")
 
 		#start inference after write the tensor to FIFO
-		frame = frame - 127.5
-		frame = frame * 0.007843
+		# frame = frame - 127.5
+		# frame = frame * 0.007843
 		graph.queue_inference_with_fifo_elem(input_fifo, output_fifo, frame.astype(np.float32), frame)
 		print("[INFO] start inferencing...")
 		
@@ -204,10 +207,10 @@ while True:
 				pred_conf = out[base_index + 2]
 				pred_boxpts = (x1, y1, x2, y2)
 
-				prediction = (pred_class, pred_conf, pred_boxpts)
-				predictions.append (prediction)
+				# prediction = (pred_class, pred_conf, pred_boxpts)
+				# predictions.append (prediction)
 		
-				print(predictions)
+				# print(predictions)
 		# for (i, pred) in enumerate(predictions):
 		# 	(pred_class, pred_conf, pred_boxpts) = pred
 
