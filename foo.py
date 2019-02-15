@@ -35,7 +35,7 @@ CONNECTION_STRING = "HostName=SHZ-Hub.azure-devices.net;DeviceId=myDeviceId;Shar
 # Using the MQTT protocol.
 PROTOCOL = IoTHubTransportProvider.MQTT
 MESSAGE_TIMEOUT = 10000
-MSG_TXT = "{\"temperature\": %.2f,\"humidity\": %.2f}"
+MSG_TXT = "{\"direction\": %.2f,\"total\": %.2f}"
 
 def send_confirmation_callback(message, result, user_context):
     print ( "IoT Hub responded to message with status: %s" % (result) )
@@ -45,12 +45,13 @@ def iothub_client_init():
     client = IoTHubClient(CONNECTION_STRING, PROTOCOL)
     return client
 
-def iothub_client_telemetry_sample_run(flag, number):
+def iothub_client_telemetry_sample_run(direction, total):
 	try:
 		client = iothub_client_init()
 		# Build the message with simulated telemetry values.
-		msg_txt_formatted = MSG_TXT % (flag, number)
+		msg_txt_formatted = MSG_TXT % (direction, total)
 		message = IoTHubMessage(msg_txt_formatted)
+
 		# Send the message.
 		print( "Sending message: %s" % message.get_string() )
 		client.send_event_async(message, send_confirmation_callback, None)
@@ -137,7 +138,7 @@ while True:
 	# resize the frame to have a maximum width of 500 pixels (the
 	# less data we have, the faster we can process it), then convert
 	# the frame from BGR to RGB for dlib
-	frame = imutils.resize(frame, width=500)
+	frame = imutils.resize(frame, width=200)
 	rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 	# if the frame dimensions are empty, set them
@@ -262,7 +263,7 @@ while True:
 				# line, count the object
 				if direction < 0 and centroid[1] < H // 2:
 					totalUp += 1
-					iothub_client_telemetry_sample_run(1, 1)
+					iothub_client_telemetry_sample_run(1, totalUp)
 					to.counted = True
 
 				# if the direction is positive (indicating the object
@@ -270,7 +271,7 @@ while True:
 				# center line, count the object
 				elif direction > 0 and centroid[1] > H // 2:
 					totalDown += 1
-					iothub_client_telemetry_sample_run(0, 1)
+					iothub_client_telemetry_sample_run(-1, totalDown)
 					to.counted = True
 
 		# store the trackable object in our dictionary
