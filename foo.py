@@ -35,7 +35,7 @@ CONNECTION_STRING = "HostName=SHZ-Hub.azure-devices.net;DeviceId=myDeviceId;Shar
 # Using the MQTT protocol.
 PROTOCOL = IoTHubTransportProvider.MQTT
 MESSAGE_TIMEOUT = 10000
-MSG_TXT = "{\"direction\": %.2f,\"total\": %.2f}"
+MSG_TXT = "{\"direction\": %.2f,\"counter\": %.2f}"
 
 def send_confirmation_callback(message, result, user_context):
     print ( "IoT Hub responded to message with status: %s" % (result) )
@@ -45,11 +45,11 @@ def iothub_client_init():
     client = IoTHubClient(CONNECTION_STRING, PROTOCOL)
     return client
 
-def iothub_client_telemetry_sample_run(direction, total):
+def iothub_client_telemetry_sample_run(direction, counter):
 	try:
 		client = iothub_client_init()
 		# Build the message with simulated telemetry values.
-		msg_txt_formatted = MSG_TXT % (direction, total)
+		msg_txt_formatted = MSG_TXT % (direction, counter)
 		message = IoTHubMessage(msg_txt_formatted)
 
 		# Send the message.
@@ -59,7 +59,6 @@ def iothub_client_telemetry_sample_run(direction, total):
 	except IoTHubError as iothub_error:
 		print ( "Unexpected error %s from IoTHub" % iothub_error )
 		return
-
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -138,7 +137,7 @@ while True:
 	# resize the frame to have a maximum width of 500 pixels (the
 	# less data we have, the faster we can process it), then convert
 	# the frame from BGR to RGB for dlib
-	frame = imutils.resize(frame, width=200)
+	frame = imutils.resize(frame, width=500)
 	rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 	# if the frame dimensions are empty, set them
@@ -263,7 +262,7 @@ while True:
 				# line, count the object
 				if direction < 0 and centroid[1] < H // 2:
 					totalUp += 1
-					iothub_client_telemetry_sample_run(1, totalUp)
+					iothub_client_telemetry_sample_run(1, totalDown - totalUp)
 					to.counted = True
 
 				# if the direction is positive (indicating the object
@@ -271,7 +270,7 @@ while True:
 				# center line, count the object
 				elif direction > 0 and centroid[1] > H // 2:
 					totalDown += 1
-					iothub_client_telemetry_sample_run(-1, totalDown)
+					iothub_client_telemetry_sample_run(-1, totalDown - totalUp)
 					to.counted = True
 
 		# store the trackable object in our dictionary
