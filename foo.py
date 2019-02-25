@@ -262,7 +262,7 @@ while True:
 				# line, count the object
 				if direction < 0 and centroid[1] < H // 2:
 					totalUp += 1
-					iothub_client_telemetry_sample_run(1, totalDown - totalUp)
+					iothub_client_telemetry_sample_run(-1, totalDown - totalUp)
 					to.counted = True
 
 				# if the direction is positive (indicating the object
@@ -270,7 +270,7 @@ while True:
 				# center line, count the object
 				elif direction > 0 and centroid[1] > H // 2:
 					totalDown += 1
-					iothub_client_telemetry_sample_run(-1, totalDown - totalUp)
+					iothub_client_telemetry_sample_run(1, totalDown - totalUp)
 					to.counted = True
 
 		# store the trackable object in our dictionary
